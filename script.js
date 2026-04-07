@@ -200,7 +200,7 @@ function createGame(playerCount, playerNames = {}) {
     selectedPlayerCount: playerCount,
     diceValue: null,
     stage: "roll",
-    message: `Pass the device to ${players[0].name}. ${players[0].emoji} ${players[0].name}, roll the dice.`,
+    message: `${players[0].emoji} ${players[0].name}, roll the dice.`,
     movableTokenIds: [],
     turnSixCount: 0,
     winner: null,
@@ -343,7 +343,7 @@ function createMoveMessage(player, token, previousProgress, captureCount, extraT
     parts.push(`Sent ${captureCount} rival token${captureCount > 1 ? "s" : ""} back to the yard.`);
   }
 
-  parts.push(extraTurn ? "Roll again." : "Pass the device for the next roll.");
+  parts.push(extraTurn ? "Roll again." : "Next player's turn.");
   return parts.join(" ");
 }
 
@@ -394,8 +394,8 @@ function advanceTurn(summary = "") {
   state.movableTokenIds = [];
   const nextPlayer = getCurrentPlayer();
   state.message = summary
-    ? `${summary} Pass the device to ${nextPlayer.name}. ${nextPlayer.emoji} ${nextPlayer.name}, roll the dice.`
-    : `Pass the device to ${nextPlayer.name}. ${nextPlayer.emoji} ${nextPlayer.name}, roll the dice.`;
+    ? `${summary} ${nextPlayer.emoji} ${nextPlayer.name}, roll the dice.`
+    : `${nextPlayer.emoji} ${nextPlayer.name}, roll the dice.`;
   render();
 }
 
