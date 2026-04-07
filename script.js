@@ -108,6 +108,7 @@ const DICE_EMOJI = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 
 const boardGrid = document.getElementById("board-grid");
 const playerCounts = document.getElementById("player-counts");
+const nameGrid = document.getElementById("name-grid");
 const newGameButton = document.getElementById("new-game-button");
 const rollButton = document.getElementById("roll-button");
 const endTurnButton = document.getElementById("end-turn-button");
@@ -122,10 +123,12 @@ const handoffText = document.getElementById("handoff-text");
 const handoffButton = document.getElementById("handoff-button");
 
 let selectedPlayerCount = 4;
+let selectedPlayerNames = {};
 let state = createGame(selectedPlayerCount);
 
 buildBoardSkeleton();
 buildPlayerCountSelector();
+buildNameInputs();
 bindControls();
 render();
 
@@ -139,19 +142,49 @@ function buildPlayerCountSelector() {
     button.addEventListener("click", () => {
       selectedPlayerCount = count;
       buildPlayerCountSelector();
+      buildNameInputs();
     });
     playerCounts.appendChild(button);
   });
 }
 
+function buildNameInputs() {
+  nameGrid.innerHTML = "";
+
+  PLAYER_SETS[selectedPlayerCount].forEach((key, index) => {
+    const config = PLAYER_CONFIG[key];
+    const card = document.createElement("div");
+    card.className = "name-card";
+
+    const inputId = `player-name-${key}`;
+    const defaultName = `${config.short} Player`;
+    const value = selectedPlayerNames[key] ?? defaultName;
+
+    card.innerHTML = `
+      <label for="${inputId}">
+        <span>${config.emoji}</span>
+        <span>Player ${index + 1} (${config.short})</span>
+      </label>
+      <input id="${inputId}" name="${inputId}" type="text" maxlength="18" value="${escapeHtml(value)}" placeholder="${defaultName}">
+    `;
+
+    const input = card.querySelector("input");
+    input.addEventListener("input", (event) => {
+      selectedPlayerNames[key] = event.target.value;
+    });
+
+    nameGrid.appendChild(card);
+  });
+}
+
 function bindControls() {
   newGameButton.addEventListener("click", () => {
-    state = createGame(selectedPlayerCount);
+    state = createGame(selectedPlayerCount, collectPlayerNames());
     render();
   });
 
   resetButton.addEventListener("click", () => {
-    state = createGame(selectedPlayerCount);
+    state = createGame(selectedPlayerCount, collectPlayerNames());
     render();
   });
 
@@ -161,7 +194,7 @@ function bindControls() {
     }
 
     state.stage = "roll";
-    state.message = `${getCurrentPlayer().emoji} ${getCurrentPlayer().label}, roll the dice.`;
+    state.message = `${getCurrentPlayer().emoji} ${getCurrentPlayer().name}, roll the dice.`;
     render();
   });
 
@@ -180,13 +213,29 @@ function bindControls() {
   });
 }
 
-function createGame(playerCount) {
+function collectPlayerNames() {
+  const names = {};
+
+  PLAYER_SETS[selectedPlayerCount].forEach((key) => {
+    const input = document.getElementById(`player-name-${key}`);
+    const fallback = `${PLAYER_CONFIG[key].short} Player`;
+    const value = input ? input.value.trim() : "";
+    names[key] = value || fallback;
+    selectedPlayerNames[key] = names[key];
+  });
+
+  return names;
+}
+
+function createGame(playerCount, playerNames = {}) {
   const playerKeys = PLAYER_SETS[playerCount];
   const players = playerKeys.map((key, index) => {
     const config = PLAYER_CONFIG[key];
+    const fallbackName = `${config.short} Player`;
     return {
       ...config,
       order: index + 1,
+      name: playerNames[key] || selectedPlayerNames[key] || fallbackName,
       tokens: Array.from({ length: 4 }, (_, tokenIndex) => ({
         id: `${key}-${tokenIndex}`,
         progress: -1,
@@ -200,7 +249,7 @@ function createGame(playerCount) {
     selectedPlayerCount: playerCount,
     diceValue: null,
     stage: "handoff",
-    message: `Pass the device to ${players[0].label}.`,
+    message: `Pass the device to ${players[0].name}.`,
     movableTokenIds: [],
     turnSixCount: 0,
     winner: null,
@@ -264,7 +313,7 @@ function takeRoll() {
   }
 
   if (state.turnSixCount === 3) {
-    state.message = `${currentPlayer.emoji} ${currentPlayer.label} rolled three 6s and loses the turn.`;
+    state.message = `${currentPlayer.emoji} ${currentPlayer.name} rolled three 6s and loses the turn.`;
     state.diceValue = roll;
     state.stage = "await-end";
     state.movableTokenIds = [];
@@ -276,14 +325,14 @@ function takeRoll() {
   state.movableTokenIds = movable.map((token) => token.id);
 
   if (movable.length === 0) {
-    state.message = `${currentPlayer.emoji} ${currentPlayer.label} rolled ${roll}, but no token can move.`;
+    state.message = `${currentPlayer.emoji} ${currentPlayer.name} rolled ${roll}, but no token can move.`;
     state.stage = "await-end";
     render();
     return;
   }
 
   state.stage = "move";
-  state.message = `${currentPlayer.emoji} ${currentPlayer.label} rolled ${roll}. Choose a glowing token.`;
+  state.message = `${currentPlayer.emoji} ${currentPlayer.name} rolled ${roll}. Choose a glowing token.`;
   render();
 }
 
@@ -321,7 +370,7 @@ function handleTokenClick(tokenId) {
   if (hasWon) {
     state.winner = player.key;
     state.stage = "game-over";
-    state.message = `${player.emoji} ${player.label} win Vyom Ludo!`;
+    state.message = `${player.emoji} ${player.name} wins Vyom Ludo!`;
   } else if (state.diceValue === 6) {
     state.stage = "roll";
     state.message = createMoveMessage(player, token, previousProgress, captureCount, true);
@@ -340,11 +389,11 @@ function createMoveMessage(player, token, previousProgress, captureCount, extraT
   const tokenNumber = Number(token.id.split("-")[1]) + 1;
 
   if (previousProgress === -1) {
-    parts.push(`${player.emoji} ${player.short} token ${tokenNumber} enters the board.`);
+    parts.push(`${player.emoji} ${player.name}'s token ${tokenNumber} enters the board.`);
   } else if (token.progress === FINAL_PROGRESS) {
-    parts.push(`${player.emoji} ${player.short} token ${tokenNumber} reached home.`);
+    parts.push(`${player.emoji} ${player.name}'s token ${tokenNumber} reached home.`);
   } else {
-    parts.push(`${player.emoji} ${player.short} token ${tokenNumber} moves ahead.`);
+    parts.push(`${player.emoji} ${player.name}'s token ${tokenNumber} moves ahead.`);
   }
 
   if (captureCount > 0) {
@@ -406,7 +455,7 @@ function advanceTurn() {
   state.diceValue = null;
   state.turnSixCount = 0;
   state.movableTokenIds = [];
-  state.message = `Pass the device to ${getCurrentPlayer().label}.`;
+  state.message = `Pass the device to ${getCurrentPlayer().name}.`;
   render();
 }
 
@@ -442,8 +491,8 @@ function renderBanner() {
   const currentPlayer = getCurrentPlayer();
   turnBanner.innerHTML = `
     <div>
-      <strong>${currentPlayer.emoji} ${currentPlayer.label}</strong>
-      <div>${currentPlayer.short} player</div>
+      <strong>${currentPlayer.emoji} ${currentPlayer.name}</strong>
+      <div>${currentPlayer.short} pieces</div>
     </div>
     <div>Turn ${state.currentTurnIndex + 1}/${state.players.length}</div>
   `;
@@ -465,8 +514,8 @@ function renderPlayers() {
       <div class="player-badges">
         <div class="player-avatar ${player.key}">${player.emoji}</div>
         <div class="player-meta">
-          <strong>${player.label}</strong>
-          <span>${player.short} squad</span>
+          <strong>${player.name}</strong>
+          <span>${player.short} pieces</span>
         </div>
       </div>
       <div class="token-summary">
@@ -529,6 +578,14 @@ function renderModal() {
   const currentPlayer = getCurrentPlayer();
   const isVisible = state.stage === "handoff";
   handoffModal.classList.toggle("hidden", !isVisible);
-  handoffTitle.textContent = `${currentPlayer.emoji} ${currentPlayer.label}`;
+  handoffTitle.textContent = `${currentPlayer.emoji} ${currentPlayer.name}`;
   handoffText.textContent = "Pass the device to this player, then tap below to start the turn.";
+}
+
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
