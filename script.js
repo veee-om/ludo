@@ -160,7 +160,8 @@ function bindControls() {
     }
 
     state.stage = "roll";
-    takeRoll();
+    state.message = `${getCurrentPlayer().emoji} ${getCurrentPlayer().name}, roll the dice.`;
+    render();
   });
 
   winnerButton.addEventListener("click", () => {
@@ -528,7 +529,7 @@ function renderModal() {
   const isVisible = currentScreen === "game" && state.stage === "handoff";
   handoffModal.classList.toggle("hidden", !isVisible);
   handoffTitle.textContent = `${currentPlayer.emoji} ${currentPlayer.name}`;
-  handoffText.textContent = "Pass the device to this player, then tap below to roll immediately.";
+  handoffText.textContent = "Pass the device to this player, then continue. They can roll from the main game panel.";
 }
 
 function renderWinnerModal() {
