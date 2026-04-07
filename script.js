@@ -71,10 +71,6 @@ const playersList = document.getElementById("players-list");
 const turnBanner = document.getElementById("turn-banner");
 const statusMessage = document.getElementById("status-message");
 const diceFace = document.getElementById("dice-face");
-const handoffModal = document.getElementById("handoff-modal");
-const handoffTitle = document.getElementById("handoff-title");
-const handoffText = document.getElementById("handoff-text");
-const handoffButton = document.getElementById("handoff-button");
 const winnerModal = document.getElementById("winner-modal");
 const winnerTitle = document.getElementById("winner-title");
 const winnerText = document.getElementById("winner-text");
@@ -154,16 +150,6 @@ function bindControls() {
     render();
   });
 
-  handoffButton.addEventListener("click", () => {
-    if (state.stage !== "handoff") {
-      return;
-    }
-
-    state.stage = "roll";
-    state.message = `${getCurrentPlayer().emoji} ${getCurrentPlayer().name}, roll the dice.`;
-    render();
-  });
-
   winnerButton.addEventListener("click", () => {
     currentScreen = "setup";
     state = createGame(selectedPlayerCount, collectPlayerNames());
@@ -213,8 +199,8 @@ function createGame(playerCount, playerNames = {}) {
     currentTurnIndex: 0,
     selectedPlayerCount: playerCount,
     diceValue: null,
-    stage: "handoff",
-    message: `Pass the device to ${players[0].name}.`,
+    stage: "roll",
+    message: `Pass the device to ${players[0].name}. ${players[0].emoji} ${players[0].name}, roll the dice.`,
     movableTokenIds: [],
     turnSixCount: 0,
     winner: null,
@@ -402,14 +388,14 @@ function advanceTurn(summary = "") {
   }
 
   state.currentTurnIndex = (state.currentTurnIndex + 1) % state.players.length;
-  state.stage = "handoff";
+  state.stage = "roll";
   state.diceValue = null;
   state.turnSixCount = 0;
   state.movableTokenIds = [];
   const nextPlayer = getCurrentPlayer();
   state.message = summary
-    ? `${summary} Pass the device to ${nextPlayer.name}.`
-    : `Pass the device to ${nextPlayer.name}.`;
+    ? `${summary} Pass the device to ${nextPlayer.name}. ${nextPlayer.emoji} ${nextPlayer.name}, roll the dice.`
+    : `Pass the device to ${nextPlayer.name}. ${nextPlayer.emoji} ${nextPlayer.name}, roll the dice.`;
   render();
 }
 
@@ -436,7 +422,6 @@ function render() {
   renderPlayers();
   renderTokens();
   renderControls();
-  renderModal();
   renderWinnerModal();
 }
 
@@ -522,14 +507,6 @@ function renderControls() {
   if (state.stage === "game-over") {
     rollButton.disabled = true;
   }
-}
-
-function renderModal() {
-  const currentPlayer = getCurrentPlayer();
-  const isVisible = currentScreen === "game" && state.stage === "handoff";
-  handoffModal.classList.toggle("hidden", !isVisible);
-  handoffTitle.textContent = `${currentPlayer.emoji} ${currentPlayer.name}`;
-  handoffText.textContent = "Pass the device to this player, then continue. They can roll from the main game panel.";
 }
 
 function renderWinnerModal() {
