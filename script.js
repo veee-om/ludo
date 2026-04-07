@@ -6,20 +6,8 @@ const PLAYER_CONFIG = {
     emoji: "🐯",
     token: "R",
     startIndex: 0,
-    homeLane: [
-      [7, 1],
-      [7, 2],
-      [7, 3],
-      [7, 4],
-      [7, 5],
-    ],
-    zone: { row: 1, col: 1 },
-    yard: [
-      [1, 1],
-      [1, 4],
-      [4, 1],
-      [4, 4],
-    ],
+    homeLane: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]],
+    yard: [[1, 1], [1, 4], [4, 1], [4, 4]],
   },
   green: {
     key: "green",
@@ -28,20 +16,8 @@ const PLAYER_CONFIG = {
     emoji: "🐸",
     token: "G",
     startIndex: 13,
-    homeLane: [
-      [1, 7],
-      [2, 7],
-      [3, 7],
-      [4, 7],
-      [5, 7],
-    ],
-    zone: { row: 1, col: 10 },
-    yard: [
-      [1, 10],
-      [1, 13],
-      [4, 10],
-      [4, 13],
-    ],
+    homeLane: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]],
+    yard: [[1, 10], [1, 13], [4, 10], [4, 13]],
   },
   yellow: {
     key: "yellow",
@@ -50,20 +26,8 @@ const PLAYER_CONFIG = {
     emoji: "🦁",
     token: "Y",
     startIndex: 39,
-    homeLane: [
-      [13, 7],
-      [12, 7],
-      [11, 7],
-      [10, 7],
-      [9, 7],
-    ],
-    zone: { row: 10, col: 1 },
-    yard: [
-      [10, 1],
-      [10, 4],
-      [13, 1],
-      [13, 4],
-    ],
+    homeLane: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]],
+    yard: [[10, 1], [10, 4], [13, 1], [13, 4]],
   },
   blue: {
     key: "blue",
@@ -72,20 +36,8 @@ const PLAYER_CONFIG = {
     emoji: "🐬",
     token: "B",
     startIndex: 26,
-    homeLane: [
-      [7, 13],
-      [7, 12],
-      [7, 11],
-      [7, 10],
-      [7, 9],
-    ],
-    zone: { row: 10, col: 10 },
-    yard: [
-      [10, 10],
-      [10, 13],
-      [13, 10],
-      [13, 13],
-    ],
+    homeLane: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]],
+    yard: [[10, 10], [10, 13], [13, 10], [13, 13]],
   },
 };
 
@@ -106,10 +58,13 @@ const SAFE_INDICES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 const FINAL_PROGRESS = 57;
 const DICE_EMOJI = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 
+const setupScreen = document.getElementById("setup-screen");
+const gameScreen = document.getElementById("game-screen");
 const boardGrid = document.getElementById("board-grid");
 const playerCounts = document.getElementById("player-counts");
 const nameGrid = document.getElementById("name-grid");
 const newGameButton = document.getElementById("new-game-button");
+const backButton = document.getElementById("back-button");
 const rollButton = document.getElementById("roll-button");
 const endTurnButton = document.getElementById("end-turn-button");
 const resetButton = document.getElementById("reset-button");
@@ -121,9 +76,14 @@ const handoffModal = document.getElementById("handoff-modal");
 const handoffTitle = document.getElementById("handoff-title");
 const handoffText = document.getElementById("handoff-text");
 const handoffButton = document.getElementById("handoff-button");
+const winnerModal = document.getElementById("winner-modal");
+const winnerTitle = document.getElementById("winner-title");
+const winnerText = document.getElementById("winner-text");
+const winnerButton = document.getElementById("winner-button");
 
 let selectedPlayerCount = 4;
 let selectedPlayerNames = {};
+let currentScreen = "setup";
 let state = createGame(selectedPlayerCount);
 
 buildBoardSkeleton();
@@ -180,11 +140,18 @@ function buildNameInputs() {
 function bindControls() {
   newGameButton.addEventListener("click", () => {
     state = createGame(selectedPlayerCount, collectPlayerNames());
+    currentScreen = "game";
     render();
   });
 
   resetButton.addEventListener("click", () => {
     state = createGame(selectedPlayerCount, collectPlayerNames());
+    currentScreen = "game";
+    render();
+  });
+
+  backButton.addEventListener("click", () => {
+    currentScreen = "setup";
     render();
   });
 
@@ -195,6 +162,12 @@ function bindControls() {
 
     state.stage = "roll";
     state.message = `${getCurrentPlayer().emoji} ${getCurrentPlayer().name}, roll the dice.`;
+    render();
+  });
+
+  winnerButton.addEventListener("click", () => {
+    currentScreen = "setup";
+    state = createGame(selectedPlayerCount, collectPlayerNames());
     render();
   });
 
@@ -291,8 +264,7 @@ function buildBoardSkeleton() {
     });
   });
 
-  const center = createCell(7, 7, "cell center");
-  boardGrid.appendChild(center);
+  boardGrid.appendChild(createCell(7, 7, "cell center"));
 }
 
 function createCell(row, col, className) {
@@ -314,7 +286,6 @@ function takeRoll() {
 
   if (state.turnSixCount === 3) {
     state.message = `${currentPlayer.emoji} ${currentPlayer.name} rolled three 6s and loses the turn.`;
-    state.diceValue = roll;
     state.stage = "await-end";
     state.movableTokenIds = [];
     render();
@@ -341,11 +312,9 @@ function getMovableTokens(player, roll) {
     if (token.progress === FINAL_PROGRESS) {
       return false;
     }
-
     if (token.progress === -1) {
       return roll === 6;
     }
-
     return token.progress + roll <= FINAL_PROGRESS;
   });
 }
@@ -400,12 +369,7 @@ function createMoveMessage(player, token, previousProgress, captureCount, extraT
     parts.push(`Sent ${captureCount} rival token${captureCount > 1 ? "s" : ""} back to the yard.`);
   }
 
-  if (extraTurn) {
-    parts.push("Roll again.");
-  } else {
-    parts.push("Tap End Turn to pass the device.");
-  }
-
+  parts.push(extraTurn ? "Roll again." : "Tap End Turn to pass the device.");
   return parts.join(" ");
 }
 
@@ -420,7 +384,6 @@ function resolveCaptures(player, movedToken) {
   }
 
   let captures = 0;
-
   state.players.forEach((opponent) => {
     if (opponent.key === player.key) {
       return;
@@ -467,24 +430,28 @@ function getTokenCoords(player, token) {
   if (token.progress === -1) {
     return player.yard[Number(token.id.split("-")[1])];
   }
-
   if (token.progress === FINAL_PROGRESS) {
     return [7, 7];
   }
-
   if (token.progress >= 52) {
     return player.homeLane[token.progress - 52];
   }
-
   return TRACK[getTrackIndex(player, token.progress)];
 }
 
 function render() {
+  renderScreens();
   renderBanner();
   renderPlayers();
   renderTokens();
   renderControls();
   renderModal();
+  renderWinnerModal();
+}
+
+function renderScreens() {
+  setupScreen.classList.toggle("hidden", currentScreen !== "setup");
+  gameScreen.classList.toggle("hidden", currentScreen !== "game");
 }
 
 function renderBanner() {
@@ -551,10 +518,7 @@ function renderTokens() {
       button.dataset.piece = player.token;
       button.style.gridRow = String(row + 1);
       button.style.gridColumn = String(col + 1);
-
-      const offsetX = (index % 2) * 15 - (items.length > 1 ? 7 : 0);
-      const offsetY = Math.floor(index / 2) * 15 - (items.length > 2 ? 7 : 0);
-      button.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      button.style.transform = `translate(${(index % 2) * 15 - (items.length > 1 ? 7 : 0)}px, ${Math.floor(index / 2) * 15 - (items.length > 2 ? 7 : 0)}px)`;
       button.disabled = !state.movableTokenIds.includes(token.id);
       button.addEventListener("click", () => handleTokenClick(token.id));
       boardGrid.appendChild(button);
@@ -563,8 +527,7 @@ function renderTokens() {
 }
 
 function renderControls() {
-  const canRoll = state.stage === "roll";
-  rollButton.disabled = !canRoll;
+  rollButton.disabled = state.stage !== "roll";
   endTurnButton.hidden = state.stage !== "await-end";
   endTurnButton.disabled = state.stage !== "await-end";
 
@@ -576,10 +539,23 @@ function renderControls() {
 
 function renderModal() {
   const currentPlayer = getCurrentPlayer();
-  const isVisible = state.stage === "handoff";
+  const isVisible = currentScreen === "game" && state.stage === "handoff";
   handoffModal.classList.toggle("hidden", !isVisible);
   handoffTitle.textContent = `${currentPlayer.emoji} ${currentPlayer.name}`;
   handoffText.textContent = "Pass the device to this player, then tap below to start the turn.";
+}
+
+function renderWinnerModal() {
+  const winner = state.winner ? state.players.find((player) => player.key === state.winner) : null;
+  const isVisible = currentScreen === "game" && state.stage === "game-over" && Boolean(winner);
+  winnerModal.classList.toggle("hidden", !isVisible);
+
+  if (!winner) {
+    return;
+  }
+
+  winnerTitle.textContent = `${winner.emoji} ${winner.name} wins!`;
+  winnerText.textContent = `All four ${winner.short.toLowerCase()} pieces made it home. Tap below to head back to setup and play again.`;
 }
 
 function escapeHtml(value) {

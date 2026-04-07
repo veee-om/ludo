@@ -40,6 +40,10 @@ button {
   padding: 24px 0 32px;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(260px, 340px);
@@ -271,6 +275,20 @@ button {
   padding: 20px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.84) 0%, rgba(255, 255, 255, 0.92) 100%);
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.game-header h2 {
+  margin: 0;
+  font-family: "Marker Felt", "Trebuchet MS", "Avenir Next", sans-serif;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
 }
 
 .board-grid {
@@ -600,6 +618,14 @@ button {
   font-size: 2rem;
 }
 
+.winner-card {
+  max-width: 460px;
+}
+
+.winner-card h2 {
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
 .modal-card p {
   margin: 0 0 20px;
   line-height: 1.55;
@@ -626,7 +652,8 @@ button {
   }
 
   .setup-panel,
-  .players-card-head {
+  .players-card-head,
+  .game-header {
     flex-direction: column;
     align-items: stretch;
   }
@@ -669,4 +696,23 @@ button {
   .art-card-bottom {
     transform: none;
   }
+}
+
+
+.modal-card--winner {
+  text-align: center;
+  background:
+    radial-gradient(circle at top, rgba(255, 239, 174, 0.95), rgba(255, 255, 255, 0.96) 42%),
+    var(--surface-strong);
+}
+
+.modal-card--winner h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+}
+
+.modal-card--winner p:last-of-type {
+  margin-bottom: 20px;
+  color: var(--muted);
+  line-height: 1.55;
 }
