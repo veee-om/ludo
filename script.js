@@ -66,7 +66,6 @@ const nameGrid = document.getElementById("name-grid");
 const newGameButton = document.getElementById("new-game-button");
 const backButton = document.getElementById("back-button");
 const rollButton = document.getElementById("roll-button");
-const endTurnButton = document.getElementById("end-turn-button");
 const resetButton = document.getElementById("reset-button");
 const playersList = document.getElementById("players-list");
 const turnBanner = document.getElementById("turn-banner");
@@ -161,8 +160,7 @@ function bindControls() {
     }
 
     state.stage = "roll";
-    state.message = `${getCurrentPlayer().emoji} ${getCurrentPlayer().name}, roll the dice.`;
-    render();
+    takeRoll();
   });
 
   winnerButton.addEventListener("click", () => {
@@ -176,13 +174,6 @@ function bindControls() {
       return;
     }
     takeRoll();
-  });
-
-  endTurnButton.addEventListener("click", () => {
-    if (state.stage !== "await-end") {
-      return;
-    }
-    advanceTurn();
   });
 }
 
@@ -285,10 +276,8 @@ function takeRoll() {
   }
 
   if (state.turnSixCount === 3) {
-    state.message = `${currentPlayer.emoji} ${currentPlayer.name} rolled three 6s and loses the turn.`;
-    state.stage = "await-end";
+    advanceTurn(`${currentPlayer.emoji} ${currentPlayer.name} rolled three 6s and loses the turn.`);
     state.movableTokenIds = [];
-    render();
     return;
   }
 
@@ -296,9 +285,7 @@ function takeRoll() {
   state.movableTokenIds = movable.map((token) => token.id);
 
   if (movable.length === 0) {
-    state.message = `${currentPlayer.emoji} ${currentPlayer.name} rolled ${roll}, but no token can move.`;
-    state.stage = "await-end";
-    render();
+    advanceTurn(`${currentPlayer.emoji} ${currentPlayer.name} rolled ${roll}, but no token can move.`);
     return;
   }
 
@@ -344,8 +331,8 @@ function handleTokenClick(tokenId) {
     state.stage = "roll";
     state.message = createMoveMessage(player, token, previousProgress, captureCount, true);
   } else {
-    state.stage = "await-end";
-    state.message = createMoveMessage(player, token, previousProgress, captureCount, false);
+    advanceTurn(createMoveMessage(player, token, previousProgress, captureCount, false));
+    return;
   }
 
   state.diceValue = null;
@@ -369,7 +356,7 @@ function createMoveMessage(player, token, previousProgress, captureCount, extraT
     parts.push(`Sent ${captureCount} rival token${captureCount > 1 ? "s" : ""} back to the yard.`);
   }
 
-  parts.push(extraTurn ? "Roll again." : "Tap End Turn to pass the device.");
+  parts.push(extraTurn ? "Roll again." : "Pass the device for the next roll.");
   return parts.join(" ");
 }
 
@@ -408,7 +395,7 @@ function getTrackIndex(player, progress) {
   return (player.startIndex + progress) % TRACK.length;
 }
 
-function advanceTurn() {
+function advanceTurn(summary = "") {
   if (state.stage === "game-over") {
     return;
   }
@@ -418,7 +405,10 @@ function advanceTurn() {
   state.diceValue = null;
   state.turnSixCount = 0;
   state.movableTokenIds = [];
-  state.message = `Pass the device to ${getCurrentPlayer().name}.`;
+  const nextPlayer = getCurrentPlayer();
+  state.message = summary
+    ? `${summary} Pass the device to ${nextPlayer.name}.`
+    : `Pass the device to ${nextPlayer.name}.`;
   render();
 }
 
@@ -528,12 +518,8 @@ function renderTokens() {
 
 function renderControls() {
   rollButton.disabled = state.stage !== "roll";
-  endTurnButton.hidden = state.stage !== "await-end";
-  endTurnButton.disabled = state.stage !== "await-end";
-
   if (state.stage === "game-over") {
     rollButton.disabled = true;
-    endTurnButton.hidden = true;
   }
 }
 
@@ -542,7 +528,7 @@ function renderModal() {
   const isVisible = currentScreen === "game" && state.stage === "handoff";
   handoffModal.classList.toggle("hidden", !isVisible);
   handoffTitle.textContent = `${currentPlayer.emoji} ${currentPlayer.name}`;
-  handoffText.textContent = "Pass the device to this player, then tap below to start the turn.";
+  handoffText.textContent = "Pass the device to this player, then tap below to roll immediately.";
 }
 
 function renderWinnerModal() {
