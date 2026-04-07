@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vyom Ludo</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Classic pass-and-play fun</p>
+        <h1>Vyom Ludo <span>🎲</span></h1>
+        <p class="hero-text">
+          Roll the dice, race your tokens home, and pass the device around for a colorful family board-game showdown.
+        </p>
+        <div class="setup-panel" id="setup-panel">
+          <div>
+            <p class="panel-label">Choose players</p>
+            <div class="player-counts" id="player-counts" aria-label="Player count selector"></div>
+          </div>
+          <button class="primary-button" id="new-game-button" type="button">Start New Game</button>
+        </div>
+      </div>
+      <div class="hero-art">
+        <div class="art-card art-card-top">👑</div>
+        <div class="art-card art-card-middle">🎯</div>
+        <div class="art-card art-card-bottom">🏆</div>
+      </div>
+    </header>
+
+    <main class="game-layout">
+      <section class="board-panel">
+        <div class="board-frame">
+          <div class="board-grid" id="board-grid" aria-label="Vyom Ludo board"></div>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="turn-card">
+          <p class="panel-label">Current turn</p>
+          <div class="turn-banner" id="turn-banner"></div>
+          <p class="status-message" id="status-message"></p>
+          <div class="dice-zone">
+            <div class="dice-face" id="dice-face">🎲</div>
+            <button class="primary-button" id="roll-button" type="button">Roll Dice</button>
+            <button class="secondary-button" id="end-turn-button" type="button" hidden>End Turn</button>
+          </div>
+        </section>
+
+        <section class="players-card">
+          <div class="players-card-head">
+            <p class="panel-label">Players</p>
+            <button class="secondary-button small-button" id="reset-button" type="button">Reset Match</button>
+          </div>
+          <div class="players-list" id="players-list"></div>
+        </section>
+
+        <section class="rules-card">
+          <p class="panel-label">Quick rules</p>
+          <ul>
+            <li>Roll a <strong>6</strong> to bring a token out of the yard.</li>
+            <li>Land on rivals to send them back, unless the tile is safe ⭐.</li>
+            <li>Roll the exact number needed to enter the center home.</li>
+            <li>A roll of <strong>6</strong> gives an extra turn. Three 6s in one turn skips the turn.</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal" id="handoff-modal" aria-live="polite">
+    <div class="modal-card">
+      <p class="panel-label">Pass and play</p>
+      <h2 id="handoff-title">Ready?</h2>
+      <p id="handoff-text">Pass the device to the next player.</p>
+      <button class="primary-button" id="handoff-button" type="button">Start Turn</button>
+    </div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
